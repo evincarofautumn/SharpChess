@@ -157,9 +157,10 @@ namespace SharpChess_Performance_Tester
             this.ReportMessage("Test starting...");
 
             ProcessStartInfo info = new ProcessStartInfo();
-            info.FileName = this.SharpChessExePath;
+            info.FileName = "/usr/bin/mono-sgen";
+            // HACK: This does not correctly shell-escape the executable path.
+            info.Arguments = String.Format("--stats '{0}'",  this.SharpChessExePath);
 
-            // info.Arguments = "";
             info.RedirectStandardInput = true;
             info.RedirectStandardOutput = true;
             info.UseShellExecute = false;
@@ -182,7 +183,7 @@ namespace SharpChess_Performance_Tester
                 this.SendCommand("xboard");
 
                 // Load test position (a SharpChess save game)
-                this.SendCommand(@"load ..\..\..\SharpChess Performance Tester\TestPosition.sharpchess");
+                this.SendCommand("load ../../../SharpChess Performance Tester/TestPosition.sharpchess");
 
                 // Set the maximum search depth (plies)
                 this.SendCommand("depth " + this.SearchDepth.ToString());
@@ -198,7 +199,8 @@ namespace SharpChess_Performance_Tester
         public void StopListener()
         {
             this.ReportMessage("Stopping SharpChess listener...");
-            this.sharpChessListenerThread.Abort();
+            if (this.sharpChessListenerThread != null)
+                this.sharpChessListenerThread.Abort();
 
             // this.sharpChessListenerThread.Join();
             this.sharpChessListenerThread = null;
@@ -211,9 +213,10 @@ namespace SharpChess_Performance_Tester
         public void StopTest()
         {
             this.ReportMessage("Stopping test...");
+            this.ReportMessage("Waiting for SharpChess process to exit.");
+            if (this.sharpChessProcess != null)
+                this.sharpChessProcess.WaitForExit ();
             this.StopListener();
-            this.ReportMessage("Killing SharpChess process.");
-            this.sharpChessProcess.Kill();
             this.ReportMessage("Test stopped.");
         }
 
